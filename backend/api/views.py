@@ -1,6 +1,10 @@
+# Стандартные библиотеки
 from django.db.models import Exists, OuterRef
 from django.http.response import HttpResponse
-from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
+
+# Сторонние библиотеки
+from djoser.views import UserViewSet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -9,16 +13,20 @@ from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
+# Модули проекта
 from api.filters import IngredientFilter, RecipeFilter
 from api.paginator import CustomPaginator
 from api.permissions import (IsAdminOrReadOnly, IsAuthorOrReadOnly,
                              IsModeratorOrReadOnly)
 from api.serializers import (CreateRecipeSerializer, FavoriteSerializer,
                              IngredientSerializer, ShoppingCartSerializer,
-                             ShowRecipeSerializer, TagSerializer)
+                             ShowRecipeSerializer, TagSerializer,
+                             UserSerializer, ShowSubscriptionsSerializer)
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                             ShoppingCart, Tag)
+from users.models import Follow, User
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -158,3 +166,51 @@ class ShoppingCartViewSet(FavoritesShoppingCartBasicViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
     model = ShoppingCart
+
+
+class UserViewSet(UserViewSet):
+    """Users' model processing viewset."""
+    serializer_class = UserSerializer
+    pagination_class = CustomPaginator
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Method returns a queryset with required properties."""
+        user = get_object_or_404(User, id=self.request.user.id)
+        is_subscribed = Follow.objects.filter(user=user, author=OuterRef('id'))
+        return User.objects.annotate(
+            is_subscribed=Exists(is_subscribed)
+        )
+
+    @action(detail=True, methods=['POST', 'DELETE'])
+    def subscribe(self, request, **kwargs):
+        """Method allows follow any user or unfollow."""
+        user = request.user
+        author_id = self.kwargs.get('id')
+        author = get_object_or_404(User, id=author_id)
+
+        if request.method == 'POST':
+            serializer = ShowSubscriptionsSerializer(
+                author, data=request.data, context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            Follow.objects.create(user=user, author=author)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            subscription = get_object_or_404(
+                Follow, user=user, author=author
+            )
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False)
+    def subscriptions(self, request):
+        """Method shows user's subscriptions."""
+        user = request.user
+        queryset = User.objects.filter(following__user=user)
+        pages = self.paginate_queryset(queryset)
+        serializer = ShowSubscriptionsSerializer(
+            pages, many=True, context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)

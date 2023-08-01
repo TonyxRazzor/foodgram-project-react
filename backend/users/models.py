@@ -1,6 +1,7 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import UniqueConstraint
+from django.db.models import F, Q, UniqueConstraint
 
 
 class User(AbstractUser):
@@ -8,32 +9,32 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name', )
     username = models.CharField(
-        max_length=150,
+        max_length=settings.LENGTH_OF_FIELDS_USER_1,
         unique=True,
         verbose_name='username'
     )
     first_name = models.CharField(
-        max_length=150,
+        max_length=settings.LENGTH_OF_FIELDS_USER_1,
         verbose_name='Имя'
     )
     last_name = models.CharField(
-        max_length=150,
+        max_length=settings.LENGTH_OF_FIELDS_USER_1,
         verbose_name='Фамилия',
     )
     email = models.EmailField(
-        max_length=254,
+        max_length=settings.LENGTH_OF_FIELDS_USER_2,
         unique=True,
         verbose_name='email'
     )
+    followers = models.ManyToManyField('self', verbose_name='following',
+                                       symmetrical=False)
 
     class Meta:
-        """Model's meta parameters."""
         ordering = ('username', )
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    def __str__(self) -> str:
-        """String representation method."""
+    def __str__(self):
         return self.username
 
 
@@ -53,16 +54,18 @@ class Follow(models.Model):
     )
 
     class Meta:
-        """Model's meta parameters."""
         constraints = [
             UniqueConstraint(
                 fields=('user', 'author'),
                 name='unique_follow'
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='no_self_follow'
             )
         ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
-    def __str__(self) -> str:
-        """String representation method."""
+    def __str__(self):
         return f"{self.user} подписан(а) на {self.author}"

@@ -106,6 +106,12 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+LENGTH_OF_FIELDS_USER_1 = 150
+
+LENGTH_OF_FIELDS_USER_2 = 254
+
+LENGTH_OF_FIELDS_RECIPES = 200
+
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
@@ -130,9 +136,9 @@ DJOSER = {
     "HIDE_USERS": False,
 }
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

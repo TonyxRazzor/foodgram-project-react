@@ -158,6 +158,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     author = UserSerializer(read_only=True)
+    cooking_time = serializers.IntegerField()
 
     class Meta:
         model = Recipe
@@ -171,6 +172,34 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
         )
+
+    def validate_tags(self, tags):
+        for tag in tags:
+            if not Tag.objects.filter(id=tag.id).exists():
+                raise serializers.ValidationError(
+                    'Указанного тега не существует')
+        return tags
+
+    def validate_cooking_time(self, cooking_time):
+        if cooking_time < 1:
+            raise serializers.ValidationError(
+                'Время готовки должно быть не меньше одной минуты')
+        return cooking_time
+
+    def validate_ingredients(self, ingredients):
+        ingredients_list = []
+        if not ingredients:
+            raise serializers.ValidationError(
+                'Отсутствуют ингридиенты')
+        for ingredient in ingredients:
+            if ingredient['id'] in ingredients_list:
+                raise serializers.ValidationError(
+                    'Ингридиенты должны быть уникальны')
+            ingredients_list.append(ingredient['id'])
+            if int(ingredient.get('amount')) < 1:
+                raise serializers.ValidationError(
+                    'Количество ингредиента больше 0')
+        return ingredients
 
     @staticmethod
     def create_ingredients(recipe, ingredients):

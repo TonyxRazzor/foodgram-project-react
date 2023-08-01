@@ -1,6 +1,10 @@
 from colorfield.fields import ColorField
-from django.core.validators import MinValueValidator
+from django.conf import settings
+from django.core.validators import (MaxValueValidator,
+                                    MinValueValidator,
+                                    RegexValidator)
 from django.db import models
+from django.db.models import UniqueConstraint
 
 from users.models import User
 
@@ -8,7 +12,7 @@ from users.models import User
 class Tag(models.Model):
     """Tags model."""
     name = models.CharField(
-        max_length=200,
+        max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         db_index=True,
         unique=True,
         verbose_name='Название тега'
@@ -17,43 +21,51 @@ class Tag(models.Model):
         max_length=7,
         format='hex',
         unique=True,
-        verbose_name='Цвет'
+        verbose_name='Цвет',
+        validators=[
+            RegexValidator(
+                regex="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+                message='Проверьте вводимый формат',
+            )
+        ],
     )
     slug = models.SlugField(
-        max_length=200,
+        max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         unique=True,
         verbose_name='Адрес'
     )
 
     class Meta:
-        """Model's meta parameters."""
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
-    def __str__(self) -> str:
-        """String representation method."""
+    def __str__(self):
         return self.name
 
 
 class Ingredient(models.Model):
     """Ingredients model."""
     name = models.CharField(
-        max_length=200,
+        max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         db_index=True,
         verbose_name='Название ингредиента'
     )
     measurement_unit = models.CharField(
-        max_length=200,
+        max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         verbose_name='Единицы измерения'
     )
 
-    class Meta():
-        """Model's meta parameters."""
+    class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement_unit'
+            )
+        ]
 
-    def __str__(self) -> str:
-        """String representation method."""
+    def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
 
 
@@ -70,7 +82,7 @@ class Recipe(models.Model):
         verbose_name='Теги'
     )
     name = models.CharField(
-        max_length=200,
+        max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         verbose_name='Название рецепта'
     )
     image = models.ImageField(
@@ -80,9 +92,10 @@ class Recipe(models.Model):
     text = models.TextField(verbose_name='Рецепт')
     cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(
-            1, message='Время приготовления должно быть более одной минуты.'
-        )],
-        verbose_name='Время приготовления'
+            1, message='Время приготовления не менее 1 минуты.'
+        ), MaxValueValidator(
+            1441, message='Время приготовления не более 24 часов.'
+        )]
     )
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -95,13 +108,11 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        """Model's meta parameters."""
         ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
-    def __str__(self) -> str:
-        """String representation method."""
+    def __str__(self):
         return self.name
 
 
@@ -121,12 +132,11 @@ class IngredientRecipe(models.Model):
     amount = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(
             1, message='Слишком мало ингредиентов.'
-        )],
+        ), MaxValueValidator(99, message='Слишком много ингредиентов.')],
         verbose_name='Количество продукта'
     )
 
     class Meta:
-        """Model's meta parameters."""
         verbose_name = 'Количество ингредиента'
         verbose_name_plural = 'Количество ингредиентов'
         constraints = [
@@ -137,63 +147,48 @@ class IngredientRecipe(models.Model):
         ]
 
     def __str__(self) -> str:
-        """String representation method."""
         return f'{self.ingredient.name}, {self.recipe.name}'
 
 
-class Favorite(models.Model):
-    """Adding recipe to favourites model."""
+class FavoriteShoppingCart(models.Model):
+    """Linking model of shopping list and favorites."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favorites',
-        verbose_name='Пользователь'
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='favorites',
-        verbose_name='Рецепт'
-    )
-
-    class Meta:
-        """Model's meta parameters."""
-        verbose_name = 'Избранное'
-        verbose_name_plural = 'Избранные'
-        default_related_name = 'favorites'
-        constraints = [
-            models.UniqueConstraint(
-                fields=('user', 'recipe',),
-                name='unique_favirite'
-            )
-        ]
-
-    def __str__(self) -> str:
-        """String representation method."""
-        return f'{self.recipe}, {self.user}'
-
-
-class ShoppingCart(models.Model):
-    """Shopping cart model."""
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='shopping_list',
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='shopping_list',
     )
 
     class Meta:
-        """Model's meta parameters."""
-        verbose_name = 'Корзина'
-        verbose_name_plural = 'Корзины'
-        default_related_name = 'shopping_list'
+        abstract = True
+        constraints = [
+            UniqueConstraint(
+                fields=('user', 'recipe'),
+                name='%(app_label)s_%(class)s_unique'
+            )
+        ]
 
-    def __str__(self) -> str:
-        """String representation method."""
-        return f'{self.user}, {self.recipe}'
+    def __str__(self):
+        return f'{self.user} :: {self.recipe}'
+
+
+class Favorite(FavoriteShoppingCart):
+    """Adding recipe to favourites model."""
+
+    class Meta:
+        default_related_name = 'favorites'
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+
+
+class ShoppingCart(FavoriteShoppingCart):
+    """Shopping cart model."""
+
+    class Meta(FavoriteShoppingCart.Meta):
+        default_related_name = 'shopping_list'
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзина'

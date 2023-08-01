@@ -8,13 +8,14 @@ class IngredientInline(admin.TabularInline):
     """Admin zone settings parameters for ingredients in recipe."""
     model = IngredientRecipe
     extra = 1
+    min_num = 1
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     """Tags admin zone settings."""
     list_display = ('id', 'name', 'slug', 'color',)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
     list_filter = ('name',)
     empty_value_display = '-пусто-'
 
