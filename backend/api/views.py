@@ -91,6 +91,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).values_list(
             "ingredient__name", "ingredient__measurement_unit", "amount"
         )
+        if not ingredients:
+            return HttpResponse("Список покупок пуст")
         for item in ingredients:
             name = item[0]
             if name not in final_list:
