@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('TOKEN', 'SECRET')
 
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS', default='*')]
+ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS', 'muramasa.hopto.org')]
 
 AUTH_USER_MODEL = 'users.User'
 
