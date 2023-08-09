@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('TOKEN', 'SECRET')
 
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS', 'muramasa.hopto.org')]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'muramasa.hopto.org').split(', ')
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -75,7 +75,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'django'),
+            'NAME': os.getenv('DB_NAME', 'django'),
             'USER': os.getenv('POSTGRES_USER', 'django'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', ''),
