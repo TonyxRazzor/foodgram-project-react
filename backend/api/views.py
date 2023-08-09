@@ -81,7 +81,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return CreateRecipeSerializer
 
     @action(
-        detail=False, methods=["GET"], permission_classes=[IsAuthenticated]
+        detail=False, methods=["GET"], url_path='download_shopping_cart', permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
         """Method of downloading a shopping cart."""
