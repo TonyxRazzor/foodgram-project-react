@@ -2,7 +2,8 @@ from django.conf import settings
 from colorfield.fields import ColorField
 from django.core.validators import (MaxValueValidator,
                                     MinValueValidator,
-                                    RegexValidator)
+                                    RegexValidator,
+                                    validate_unicode_slug)
 from django.db import models
 from django.db.models import UniqueConstraint
 
@@ -85,9 +86,8 @@ class Recipe(models.Model):
         max_length=settings.LENGTH_OF_FIELDS_RECIPES,
         verbose_name='Название рецепта',
         validators=[
-            RegexValidator(
-                regex="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-                message='Проверьте вводимый формат',
+            validate_unicode_slug(
+                message='Символы в название запрещены.',
             )
         ],
     )
