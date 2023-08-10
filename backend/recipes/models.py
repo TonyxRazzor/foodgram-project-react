@@ -86,7 +86,7 @@ class Recipe(models.Model):
         verbose_name='Название рецепта',
         validators=[
             RegexValidator(
-                regex="^[а-яА-Я\s]+$",
+                regex="^[а-яА-Я\\s]+$",
                 message='Символы в название запрещены.',
             )
         ]
