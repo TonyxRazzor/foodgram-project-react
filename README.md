@@ -59,7 +59,7 @@ TELEGRAM_TO             # ID телеграм-аккаунта для посыл
 TELEGRAM_TOKEN          # токен бота, посылающего сообщение
 
 DB_ENGINE               # django.db.backends.postgresql
-DB_NAME                 # postgres
+POSTGRES_DB             # postgres
 POSTGRES_USER           # postgres
 POSTGRES_PASSWORD       # postgres
 DB_HOST                 # db
@@ -74,9 +74,9 @@ sudo docker-compose up
 * Выполнить миграции, создать суперпользователя, собрать статику:
 
 ```
-sudo docker-compose exec web python manage.py migrate
-sudo docker-compose exec web python manage.py createsuperuser
-sudo docker-compose exec web python manage.py collectstatic --no-input
+sudo docker-compose exec backend python manage.py migrate
+sudo docker-compose exec backend python manage.py createsuperuser
+sudo docker-compose exec backend python manage.py collectstatic --no-input
 ```
 
 * Наполнить БД ингредиентами
