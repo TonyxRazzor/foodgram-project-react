@@ -1,5 +1,5 @@
-from colorfield.fields import ColorField
 from django.conf import settings
+from colorfield.fields import ColorField
 from django.core.validators import (MaxValueValidator,
                                     MinValueValidator,
                                     RegexValidator)
@@ -83,7 +83,13 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         max_length=settings.LENGTH_OF_FIELDS_RECIPES,
-        verbose_name='Название рецепта'
+        verbose_name='Название рецепта',
+        validators=[
+            RegexValidator(
+                regex="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+                message='Проверьте вводимый формат',
+            )
+        ],
     )
     image = models.ImageField(
         upload_to='recipes/image/',
