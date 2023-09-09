@@ -192,10 +192,10 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Отсутствуют ингридиенты')
         for ingredient in ingredients:
-            if ingredient['id'] in ingredients_list:
+            if ingredient in ingredients_list:
                 raise serializers.ValidationError(
                     'Ингридиенты должны быть уникальны')
-            ingredients_list.append(ingredient['id'])
+            ingredients_list.append(ingredient)
             if int(ingredient.get('amount')) < 1:
                 raise serializers.ValidationError(
                     'Количество ингредиента больше 0')
