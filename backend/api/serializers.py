@@ -192,7 +192,10 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Отсутствуют ингридиенты')
         for ingredient in ingredients:
-            if ingredient in ingredients_list:
+            
+            index = ingredients.index(ingredient)
+            if index != ingredients.index(ingredient, index + 1):
+            
                 raise serializers.ValidationError(
                     'Ингридиенты должны быть уникальны')
             ingredients_list.append(ingredient)
