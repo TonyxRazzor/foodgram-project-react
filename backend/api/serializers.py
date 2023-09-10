@@ -180,6 +180,18 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                     'Указанного тега не существует')
         return tags
 
+    def validate(self, data):
+        ingredients = data['ingredients']
+        ingredient_list = []
+        for items in ingredients:
+            ingredient = get_object_or_404(
+                Ingredient, id=items['id'])
+            if ingredient in ingredient_list:
+                raise serializers.ValidationError(
+                    'Ингредиент должен быть уникальным!')
+            ingredient_list.append(ingredient)
+        return data
+
     def validate_cooking_time(self, cooking_time):
         if cooking_time < 1:
             raise serializers.ValidationError(
@@ -191,13 +203,6 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         if not ingredients:
             raise serializers.ValidationError(
                 'Отсутствуют ингридиенты')
-        for ingredient in ingredients:
-            
-            index = ingredients.index(ingredient)
-            if index != ingredients.index(ingredient, index + 1):
-            
-                raise serializers.ValidationError(
-                    'Ингридиенты должны быть уникальны')
             ingredients_list.append(ingredient)
             if int(ingredient.get('amount')) < 1:
                 raise serializers.ValidationError(
